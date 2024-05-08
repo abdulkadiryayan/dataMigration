@@ -1,9 +1,22 @@
 const express = require('express');
 const { exec } = require('child_process');
+const fs = require('fs');
+
+// index2.js'den fonksiyonları import etme
+const { applySqlScript } = require('./index2');
 
 const app = express();
+
+// Port
+const PORT = process.env.PORT || 3000;
+
+// Dosya yolları
 const dumpFile = 'C:/Users/Mehmet/Desktop/deneme_pg/database-importer/dump.sql';
 
+const sqlScriptPathMigrate = 'C:/Users/Mehmet/Downloads/migration_v1_to_v2.sql';
+const sqlScriptPathRollback = 'C:/Users/Mehmet/Downloads/rollback_v2_to_v1.sql';
+
+// Veritabanı bağlantı bilgileri
 const exportFrom = {
     host: "localhost",
     user: "postgres",
@@ -19,13 +32,13 @@ const importTo = {
 };
 
 // Dump endpoint'i
-app.get('/dump', (req, res) => {
+app.post('/dump', (req, res) => {
     console.log(`Veriler ${exportFrom.database} veritabanından dışa aktarılmaya başlanıyor`);
 
     exec(`pg_dump -U ${exportFrom.user} -h ${exportFrom.host} -Fc -f ${dumpFile} ${exportFrom.database}`, (err, stdout, stderr) => {
         if (err) {
             console.error(`exec error: ${err}`);
-            res.status(500).send('Veri dışa aktarma işlemi sırasında bir hata oluştu.');
+            res.status(500).send('Veri dışa aktarma işlemi sırasında bir hata oluştu. ' + err);
             return;
         }
 
@@ -35,13 +48,13 @@ app.get('/dump', (req, res) => {
 });
 
 // Restore endpoint'i
-app.get('/restore', (req, res) => {
+app.post('/restore', (req, res) => {
     console.log(`Şimdi, veriler ${importTo.database} veritabanına aktarılıyor`);
 
-    exec(`pg_restore -U ${importTo.user} -h ${importTo.host} -d ${importTo.database}  ${dumpFile}`, (err, stdout, stderr) => {
+    exec(`pg_restore --if-exists=append --clean -U ${importTo.user} -h ${importTo.host} -d ${importTo.database}  ${dumpFile}`, (err, stdout, stderr) => {
         if (err) {
             console.error(`exec error: ${err}`);
-            res.status(500).send('Veri içe aktarma işlemi sırasında bir hata oluştu.');
+            res.status(500).send('Veri içe aktarma işlemi sırasında bir hata oluştu. ' + err);
             return;
         }
 
@@ -50,8 +63,29 @@ app.get('/restore', (req, res) => {
     });
 });
 
+// Migrate endpoint'i
+app.post('/migrate', async (req, res) => {
+    try {
+        await applySqlScript(sqlScriptPathMigrate);
+        res.status(200).send('Migrate işlemi başarıyla tamamlandı.');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Migrate işlemi sırasında bir hata oluştu.');
+    }
+});
+
+// Rollback endpoint'i
+app.post('/rollback', async (req, res) => {
+    try {
+        await applySqlScript(sqlScriptPathRollback);
+        res.status(200).send('Rollback işlemi başarıyla tamamlandı.');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Rollback işlemi sırasında bir hata oluştu.');
+    }
+});
+
 // Sunucuyu başlat
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Sunucu çalışıyor, port: ${PORT}`);
 });
