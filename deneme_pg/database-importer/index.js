@@ -1,6 +1,7 @@
 const express = require('express');
 const { exec } = require('child_process');
 const fs = require('fs');
+require('dotenv').config();
 
 // index2.js'den fonksiyonları import etme
 const { applySqlScript } = require('./index2');
@@ -20,30 +21,35 @@ const sqlScriptPathRollback = 'C:/Users/Mehmet/Downloads/rollback_v2_to_v1.sql';
 const exportFrom = {
     host: "localhost",
     user: "postgres",
-    password: "1234",
+    password: process.env.pass,
     database: "postgres"
 };
+
+const exportCon = `postgresql://${exportFrom.user}:${exportFrom.password}@${exportFrom.host}:5432/${exportFrom.database}`;
 
 const importTo = {
     host: "localhost",
     user: "postgres",
-    password: "1234",
+    password: process.env.pass,
     database: "test3"
 };
+
+const importCon = `postgresql://${importTo.user}:${importTo.password}@${importTo.host}:5432/${importTo.database}`;
 
 // Dump endpoint'i
 app.post('/dump', (req, res) => {
     console.log(`Veriler ${exportFrom.database} veritabanından dışa aktarılmaya başlanıyor`);
 
-    exec(`pg_dump -U ${exportFrom.user} -h ${exportFrom.host} -Fc -f ${dumpFile} ${exportFrom.database}`, (err, stdout, stderr) => {
+    exec(`pg_dump -Fc ${exportCon} > ${dumpFile}`, { maxBuffer: 1024 * 1024 * 10 }, (err, stdout, stderr) => {
         if (err) {
             console.error(`exec error: ${err}`);
             res.status(500).send('Veri dışa aktarma işlemi sırasında bir hata oluştu. ' + err);
             return;
         }
 
-        console.log(`Dışa aktarma işlemi tamamlandı.`);
-        res.status(200).sendFile(dumpFile);
+        console.log("Dışa aktarma işlemi tamamlandı.")
+        res.status(200).send(`Dışa aktarma işlemi tamamlandı.`);
+        //res.status(200).sendFile(dumpFile);
     });
 });
 
@@ -51,7 +57,7 @@ app.post('/dump', (req, res) => {
 app.post('/restore', (req, res) => {
     console.log(`Şimdi, veriler ${importTo.database} veritabanına aktarılıyor`);
 
-    exec(`pg_restore --if-exists=append --clean -U ${importTo.user} -h ${importTo.host} -d ${importTo.database}  ${dumpFile}`, (err, stdout, stderr) => {
+    exec(`pg_restore --if-exists=append -c -d ${importCon} ${dumpFile}`, (err, stdout, stderr) => {
         if (err) {
             console.error(`exec error: ${err}`);
             res.status(500).send('Veri içe aktarma işlemi sırasında bir hata oluştu. ' + err);
