@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Dosya yolları
-const dumpFile = 'C:/Users/Mehmet/Desktop/deneme_pg/database-importer/dump.sql';
+const dumpFile = './backups/dump.sql';
 
 const sqlScriptPathMigrate = 'C:/Users/Mehmet/Downloads/migration_v1_to_v2.sql';
 const sqlScriptPathRollback = 'C:/Users/Mehmet/Downloads/rollback_v2_to_v1.sql';
@@ -55,7 +55,7 @@ app.post('/dump', (req, res) => {
 
 // Restore endpoint'i
 app.post('/restore', (req, res) => {
-    console.log(`Şimdi, veriler ${importTo.database} veritabanına aktarılıyor`);
+    console.log(`Veriler ${importTo.database} veritabanına aktarılıyor`);
 
     exec(`pg_restore --if-exists=append -c -d ${importCon} ${dumpFile}`, (err, stdout, stderr) => {
         if (err) {
