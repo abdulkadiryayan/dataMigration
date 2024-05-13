@@ -22,7 +22,7 @@ const exportFrom = {
     host: "localhost",
     user: "postgres",
     password: process.env.pass,
-    database: "postgres"
+    database: "dvdrental"
 };
 
 const exportCon = `postgresql://${exportFrom.user}:${exportFrom.password}@${exportFrom.host}:5432/${exportFrom.database}`;
@@ -31,7 +31,7 @@ const importTo = {
     host: "localhost",
     user: "postgres",
     password: process.env.pass,
-    database: "test3"
+    database: "dvdrental1"
 }; 
 
 const importCon = `postgresql://${importTo.user}:${importTo.password}@${importTo.host}:5432/${importTo.database}`;
