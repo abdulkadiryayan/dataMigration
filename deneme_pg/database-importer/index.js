@@ -101,10 +101,10 @@ app.post('/restore', (req, res) => {
 // Migrate endpoint'i
 app.post('/migrate', async (req, res) => {
     try {
-        const { target_database } = req.body; // Hedef veritabanını istek gövdesinden al
-        const sqlScriptPathMigrate = `./scripts/examples/migration_v1_to_v2.sql`; // Hedef veritabanına sql  yolu
-        await applySqlScript(sqlScriptPathMigrate); // SQL script i hedef veritabanına uygula
-        res.status(200).send(`Migrate işlemi ${target_database} veritabanı için başarıyla tamamlandı.`);
+        const { host, user, password, database } = req.body.target_db_connection;
+        const sqlScriptPathMigrate = `./scripts/examples/migration_v1_to_v2.sql`;
+        await applySqlScript(sqlScriptPathMigrate, database, host, user, password);
+        res.status(200).send(`Migrate işlemi ${database} veritabanı için başarıyla tamamlandı.`);
     } catch (err) {
         console.error(err);
         res.status(500).send('Migrate işlemi sırasında bir hata oluştu.');
@@ -114,15 +114,16 @@ app.post('/migrate', async (req, res) => {
 // Rollback endpoint'i
 app.post('/rollback', async (req, res) => {
     try {
-        const { target_database, backup_file } = req.body; // Hedef veritabanını ve geri alınacak yedeği istek al
-        const sqlScriptPathRollback = `./scripts/examples/rollback_v2_to_v1.sql`; // Hedef veritabanına özgü geri alma SQL script yolu
-        await applySqlScript(sqlScriptPathRollback); // Geri alma SQL script hedef veritabanına uygula
-        res.status(200).send(`Rollback işlemi ${target_database} veritabanı için başarıyla tamamlandı. Seçilen yedek: ${backup_file}`);
+        const { host, user, password, database } = req.body.target_db_connection;
+        const sqlScriptPathRollback = `./scripts/examples/rollback_v2_to_v1.sql`;
+        await applySqlScript(sqlScriptPathRollback, database, host, user, password);
+        res.status(200).send(`Rollback işlemi ${database} veritabanı için başarıyla tamamlandı.`);
     } catch (err) {
         console.error(err);
         res.status(500).send('Rollback işlemi sırasında bir hata oluştu.');
     }
 });
+
 
 
 // Sunucuyu başlat
