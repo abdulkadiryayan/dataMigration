@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 3000;
 // Dosya yolları
 const dumpFile = './backups/dump.sql';
 
-const sqlScriptPathMigrate = 'C:/Users/Mehmet/Downloads/migration_v1_to_v2.sql';
-const sqlScriptPathRollback = 'C:/Users/Mehmet/Downloads/rollback_v2_to_v1.sql';
+const sqlScriptPathMigrate = 'C:/Users/abdulkadir/Desktop/dosya/migration_v1_to_v2.sql';
+const sqlScriptPathRollback = 'C:/Users/abdulkadir/Desktop/dosya/rollback_v2_to_v1.sql';
 
 // Veritabanı bağlantı bilgileri
 const exportFrom = {
@@ -32,7 +32,7 @@ const importTo = {
     user: "postgres",
     password: process.env.pass,
     database: "test3"
-};
+}; 
 
 const importCon = `postgresql://${importTo.user}:${importTo.password}@${importTo.host}:5432/${importTo.database}`;
 
