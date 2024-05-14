@@ -1,7 +1,9 @@
 const { Client } = require('pg');
 const fs = require('fs');
 
+
 async function applySqlScript(scriptPath, targetDatabase, host, user, password,res) {
+
     const connectionString = `postgresql://${user}:${password}@${host}:5432/${targetDatabase}`;
     const client = new Client({ connectionString });
 
