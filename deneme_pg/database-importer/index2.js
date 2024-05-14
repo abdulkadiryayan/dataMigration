@@ -1,7 +1,9 @@
 const { Client } = require('pg');
 const fs = require('fs');
 
-async function applySqlScript(scriptPath, targetDatabase, host, user, password) {
+
+async function applySqlScript(scriptPath, targetDatabase, host, user, password,res) {
+
     const connectionString = `postgresql://${user}:${password}@${host}:5432/${targetDatabase}`;
     const client = new Client({ connectionString });
 
@@ -15,6 +17,8 @@ async function applySqlScript(scriptPath, targetDatabase, host, user, password) 
         console.log('SQL script başarıyla çalıştırıldı.');
     } catch (err) {
         console.error('Hata:', err);
+        res.status(500).send(`${err.message}`)
+        
     } finally {
         await client.end();
         console.log('Veritabanı bağlantısı sonlandırıldı.');
