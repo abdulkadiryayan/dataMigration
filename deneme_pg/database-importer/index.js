@@ -16,10 +16,9 @@ const PORT = process.env.PORT || 3000;
 
 // Dosya yolları
 const backupsDirectory = './backups/';
+const rollbackScriptsDirectory = './scripts/rollback';
+const migrationScriptsDirectory = './scripts/migration';
 
-
-const sqlScriptPathMigrate = './scripts/examples/migration_v1_to_v2.sql';
-const sqlScriptPathRollback = './scripts/examples/rollback_v2_to_v1.sql';
 
 // Backup dosyalarını listeleme endpoint'i
 app.get('/backup_list', (req, res) => {
@@ -50,7 +49,7 @@ app.post('/dump', (req, res) => {
         database: database
     };
 
-    const exportCon = `postgresql://${exportFrom.user}:${process.env.PGPASSWORD}@${exportFrom.host}:5432/${exportFrom.database}`;
+    const exportCon = `postgresql://${exportFrom.user}:${exportFrom.password}@${exportFrom.host}:5432/${exportFrom.database}`;
 
     const uniqueFileName = `backup_${new Date().toISOString().replace(/:/g, '_').replace(/\..+/, '')}.sql`;
     const dumpFilePath = backupsDirectory + uniqueFileName;
@@ -81,7 +80,7 @@ app.post('/restore', (req, res) => {
         database: database
     };
 
-    const importCon = `postgresql://${importTo.user}:${process.env.PGPASSWORD}@${importTo.host}:5432/${importTo.database}`;
+    const importCon = `postgresql://${importTo.user}:${importTo.password}@${importTo.host}:5432/${importTo.database}`;
     const backupFilePath = backupsDirectory + source_backup_file;
 
     console.log(`Veriler ${importTo.database} veritabanına aktarılıyor`);
@@ -98,11 +97,58 @@ app.post('/restore', (req, res) => {
     });
 });
 
+// Migration list endpoint'i
+app.get('/migration_list', (req, res) => {
+    try {
+        // Migrate scriptlerinin bulunduğu dizini oku
+        fs.readdir(migrationScriptsDirectory, (err, files) => {
+            if (err) {
+                console.error('Error reading migration scripts directory:', err);
+                res.status(500).send('Error reading migration scripts directory');
+                return;
+            }
+
+            // Sadece .sql uzantılı dosyaları filtreleme
+            const migrationScripts = files.filter(file => path.extname(file) === '.sql');
+
+            // Script listesini istemciye gönderme
+            res.status(200).json(migrationScripts);
+        });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).send('An error occurred while fetching migration scripts.');
+    }
+});
+
+// Rollback list endpoint'i
+app.get('/rollback_list', (req, res) => {
+    try {
+        // Rollback scriptlerinin bulunduğu dizini oku
+        fs.readdir(rollbackScriptsDirectory, (err, files) => {
+            if (err) {
+                console.error('Error reading rollback scripts directory:', err);
+                res.status(500).send('Error reading rollback scripts directory');
+                return;
+            }
+
+            // Sadece .sql uzantılı dosyaları filtreleme
+            const rollbackScripts = files.filter(file => path.extname(file) === '.sql');
+
+            // Script listesini istemciye gönderme
+            res.status(200).json(rollbackScripts);
+        });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).send('An error occurred while fetching rollback scripts.');
+    }
+});
+
+
 // Migrate endpoint'i
 app.post('/migrate', async (req, res) => {
     try {
         const { host, user, password, database } = req.body.target_db_connection;
-        const sqlScriptPathMigrate = `./scripts/examples/migration_v1_to_v2.sql`;
+        const sqlScriptPathMigrate = `./scripts/migration/migration_v1_to_v2.sql`;
         await applySqlScript(sqlScriptPathMigrate, database, host, user, password);
         res.status(200).send(`Migrate işlemi ${database} veritabanı için başarıyla tamamlandı.`);
     } catch (err) {
@@ -115,7 +161,7 @@ app.post('/migrate', async (req, res) => {
 app.post('/rollback', async (req, res) => {
     try {
         const { host, user, password, database } = req.body.target_db_connection;
-        const sqlScriptPathRollback = `./scripts/examples/rollback_v2_to_v1.sql`;
+        const sqlScriptPathRollback = `./scripts/rollback/rollback_v2_to_v1.sql`;
         await applySqlScript(sqlScriptPathRollback, database, host, user, password);
         res.status(200).send(`Rollback işlemi ${database} veritabanı için başarıyla tamamlandı.`);
     } catch (err) {
