@@ -14,7 +14,14 @@ const Migration = () => {
     useEffect(() => {
         axios.get('http://localhost:3000/migration_list')
             .then(response => setMigrationScripts(response.data))
-            .catch(error => console.error('Error fetching migration scripts:', error));
+            .catch(error => {
+                console.error('Error during migration list:', error);
+                if (error.response) {
+                    alert('Error during migration list: ' + error.response.data);
+                } else {
+                    alert('Error during migration list: ' + error.message);
+                }
+            });
     }, []);
 
     const handleChange = (e) => {
@@ -28,7 +35,14 @@ const Migration = () => {
     const handleMigrate = () => {
         axios.post('http://localhost:3000/migrate', { source_migrate_file: selectedScript, target_db_connection: targetDbConnection })
             .then(response => alert(response.data))
-            .catch(error => alert('Error during migration:', error));
+            .catch(error => {
+                console.error('Error during migrate:', error);
+                if (error.response) {
+                    alert('Error during migrate: ' + error.response.data);
+                } else {
+                    alert('Error during migrate: ' + error.message);
+                }
+            });
     };
 
     return (

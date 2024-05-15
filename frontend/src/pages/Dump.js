@@ -20,7 +20,14 @@ const Dump = () => {
     const handleDump = () => {
         axios.post('http://localhost:3000/dump', { target_db_connection: targetDbConnection })
             .then(response => alert(response.data))
-            .catch(error => alert('Error during dump:', error));
+            .catch(error => {
+                console.error('Error during dump:', error);
+                if (error.response) {
+                    alert('Error during dump: ' + error.response.data);
+                } else {
+                    alert('Error during dump: ' + error.message);
+                }
+            });
     };
 
     return (

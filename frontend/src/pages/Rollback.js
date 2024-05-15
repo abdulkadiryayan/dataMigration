@@ -14,7 +14,14 @@ const Rollback = () => {
     useEffect(() => {
         axios.get('http://localhost:3000/rollback_list')
             .then(response => setRollbackScripts(response.data))
-            .catch(error => console.error('Error fetching rollback scripts:', error));
+            .catch(error => {
+                console.error('Error during rollback list:', error);
+                if (error.response) {
+                    alert('Error during rollback list: ' + error.response.data);
+                } else {
+                    alert('Error during rollback list: ' + error.message);
+                }
+            });
     }, []);
 
     const handleChange = (e) => {
@@ -28,7 +35,14 @@ const Rollback = () => {
     const handleRollback = () => {
         axios.post('http://localhost:3000/rollback', { source_rollback_file: selectedScript, target_db_connection: targetDbConnection })
             .then(response => alert(response.data))
-            .catch(error => alert('Error during rollback:', error));
+            .catch(error => {
+                console.error('Error during rollback:', error);
+                if (error.response) {
+                    alert('Error during rollback: ' + error.response.data);
+                } else {
+                    alert('Error during rollback: ' + error.message);
+                }
+            });
     };
 
     return (

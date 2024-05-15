@@ -144,13 +144,21 @@ app.post('/migrate', async (req, res) => {
         const { host, user, password, database } = req.body.target_db_connection;
         
         const sqlScriptPathMigrate = `./scripts/migration/` + source_migrate_file;
+
+        // Hata ayıklama logları ekleyin
+        console.log('Migration işlemine başlandı');
+        console.log('SQL Script Path:', sqlScriptPathMigrate);
+        console.log('Database bağlantı bilgileri:', { host, user, password, database });
+
         await applySqlScript(sqlScriptPathMigrate, database, host, user, password, res);
         
+        console.log('Migration işlemi başarıyla tamamlandı');
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Migrate işlemi sırasında bir hata oluştu.');
+        console.error('Migration işlemi sırasında hata oluştu:', err);
+        res.status(500).send('Migrate işlemi sırasında bir hata oluştu: ' + err.message);
     }
 });
+
 
 // Rollback endpoint'i
 app.post('/rollback', async (req, res) => {

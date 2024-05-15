@@ -14,7 +14,7 @@ const Restore = () => {
     useEffect(() => {
         axios.get('http://localhost:3000/backup_list')
             .then(response => setBackupFiles(response.data))
-            .catch(error => console.error('Error fetching backup list:', error));
+            .catch(error => console.error('Error fetching backup list:'+ error));
     }, []);
 
     const handleChange = (e) => {
@@ -28,7 +28,14 @@ const Restore = () => {
     const handleRestore = () => {
         axios.post('http://localhost:3000/restore', { source_backup_file: selectedBackup, target_db_connection: targetDbConnection })
             .then(response => alert(response.data))
-            .catch(error => alert('Error during restore:', error));
+            .catch(error => {
+                console.error('Error during restore:', error);
+                if (error.response) {
+                    alert('Error during restore: ' + error.response.data);
+                } else {
+                    alert('Error during restore: ' + error.message);
+                }
+            });
     };
 
     return (

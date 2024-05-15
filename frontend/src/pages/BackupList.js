@@ -7,7 +7,14 @@ const BackupList = () => {
     useEffect(() => {
         axios.get('http://localhost:3000/backup_list')
             .then(response => setBackups(response.data))
-            .catch(error => console.error('Error fetching backup list:', error));
+            .catch(error => {
+                console.error('Error during backup list:', error);
+                if (error.response) {
+                    alert('Error during backup list: ' + error.response.data);
+                } else {
+                    alert('Error during backup list: ' + error.message);
+                }
+            });
     }, []);
 
     return (
