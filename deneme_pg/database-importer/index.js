@@ -5,7 +5,7 @@ require('dotenv').config();
 const path = require('path'); // path modülünü ekleyin
 
 
-const { applySqlScript } = require('./index2'); // index2.js'den fonksiyonları import etme
+const { applySqlScript } = require('./sqlScriptFunc'); // index2.js'den fonksiyonları import etme
 
 const app = express();
 
@@ -148,7 +148,6 @@ app.get('/rollback_list', (req, res) => {
     }
 });
 
-
 // Migrate endpoint'i
 app.post('/migrate', async (req, res) => {
     try {
@@ -156,8 +155,8 @@ app.post('/migrate', async (req, res) => {
         const { host, user, password, database } = req.body.target_db_connection;
         
         const sqlScriptPathMigrate = `./scripts/migration/` + source_migrate_file;
-        await applySqlScript(sqlScriptPathMigrate, database, host, user, password,res);
-        res.status(200).send(`Migrate işlemi ${database} veritabanı için başarıyla tamamlandı.`);
+        await applySqlScript(sqlScriptPathMigrate, database, host, user, password, res);
+        
     } catch (err) {
         console.error(err);
         res.status(500).send('Migrate işlemi sırasında bir hata oluştu.');
@@ -176,8 +175,6 @@ app.post('/rollback', async (req, res) => {
         console.error(err);
     }
 });
-
-
 
 // Sunucuyu başlat
 app.listen(PORT, () => {
