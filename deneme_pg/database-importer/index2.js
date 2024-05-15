@@ -1,3 +1,4 @@
+/*
 const { Client } = require('pg');
 const fs = require('fs');
 
@@ -24,3 +25,4 @@ async function applySqlScript(scriptPath, targetDatabase, host, user, password,r
 }
 
 module.exports = { applySqlScript };
+*/
