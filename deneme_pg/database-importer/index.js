@@ -51,13 +51,10 @@ app.post('/dump', (req, res) => {
 
     const exportCon = `postgresql://${exportFrom.user}:${exportFrom.password}@${exportFrom.host}:5432/${exportFrom.database}`;
 
-
     const now = new Date();
     const tarih = new Date(now.getTime() + (3 * 60 * 60 * 1000));
     const formattedDate = tarih.toISOString().replace(/:/g, '_').replace(/\..+/, ''); 
     const uniqueFileName = `backup_${formattedDate}.sql`;
-
-
 
     
     const dumpFilePath = backupsDirectory + uniqueFileName;
@@ -157,11 +154,9 @@ app.post('/migrate', async (req, res) => {
     try {
         const { source_migrate_file } = req.body;
         const { host, user, password, database } = req.body.target_db_connection;
-
         
         const sqlScriptPathMigrate = `./scripts/migration/` + source_migrate_file;
         await applySqlScript(sqlScriptPathMigrate, database, host, user, password,res);
-
         res.status(200).send(`Migrate işlemi ${database} veritabanı için başarıyla tamamlandı.`);
     } catch (err) {
         console.error(err);
@@ -174,10 +169,8 @@ app.post('/rollback', async (req, res) => {
     try {
         const { source_rollback_file } = req.body;
         const { host, user, password, database } = req.body.target_db_connection;
-
         const sqlScriptPathRollback = `./scripts/rollback/` + source_rollback_file;
         await applySqlScript(sqlScriptPathRollback, database, host, user, password,res);
-
         res.status(200).send(`Rollback işlemi ${database} veritabanı için başarıyla tamamlandı.`);
     } catch (err) {
         console.error(err);
