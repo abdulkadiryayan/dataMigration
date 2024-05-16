@@ -6,6 +6,7 @@ async function applySqlScript(scriptPath, targetDatabase, host, user, password, 
     const client = new Client({ connectionString });
 
     try {
+        console.log('SQL script dosyası okunuyor:', scriptPath);
         let sqlScript = fs.readFileSync(scriptPath, 'utf8');
         console.log('SQL script çalıştırılıyor...');
 
@@ -31,5 +32,6 @@ async function applySqlScript(scriptPath, targetDatabase, host, user, password, 
         }
     }
 }
+
 
 module.exports = { applySqlScript };
