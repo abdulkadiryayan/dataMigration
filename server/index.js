@@ -1,15 +1,15 @@
 const express = require('express');
+const cors = require('cors');
 const { exec } = require('child_process');
 const fs = require('fs');
 require('dotenv').config();
-const path = require('path'); // path modülünü ekleyin
-
-
-const { applySqlScript } = require('./sqlScriptFunc'); // index2.js'den fonksiyonları import etme
+const path = require('path');
+const { applySqlScript } = require('./sqlScriptFunc');
 
 const app = express();
 
-app.use(express.json()); // JSON verilerini işlemeye yarar
+app.use(cors()); // CORS middleware ekleyin
+app.use(express.json());
 
 // Port
 const PORT = process.env.PORT || 3000;
@@ -19,9 +19,9 @@ const backupsDirectory = './backups/';
 const rollbackScriptsDirectory = './scripts/rollback';
 const migrationScriptsDirectory = './scripts/migration';
 
-
 // Backup dosyalarını listeleme endpoint'i
 app.get('/backup_list', (req, res) => {
+    console.log('Backup list endpoint hit');
     fs.readdir(backupsDirectory, (err, files) => {
         if (err) {
             console.error('Error reading backup directory:', err);
@@ -29,10 +29,8 @@ app.get('/backup_list', (req, res) => {
             return;
         }
 
-        // Sadece .sql uzantılı dosyaları filtreleme
         const backupFiles = files.filter(file => path.extname(file) === '.sql');
-
-        // Dosya listesini istemciye gönderme
+        console.log('Backup files:', backupFiles);
         res.status(200).json(backupFiles);
     });
 });
@@ -56,7 +54,6 @@ app.post('/dump', (req, res) => {
     const formattedDate = tarih.toISOString().replace(/:/g, '_').replace(/\..+/, ''); 
     const uniqueFileName = `backup_${formattedDate}.sql`;
 
-    
     const dumpFilePath = backupsDirectory + uniqueFileName;
 
     console.log(`Veriler ${exportFrom.database} veritabanından dışa aktarılarak ${uniqueFileName} dosyasına kaydediliyor`);
@@ -105,7 +102,6 @@ app.post('/restore', (req, res) => {
 // Migration list endpoint'i
 app.get('/migration_list', (req, res) => {
     try {
-        // Migrate scriptlerinin bulunduğu dizini oku
         fs.readdir(migrationScriptsDirectory, (err, files) => {
             if (err) {
                 console.error('Error reading migration scripts directory:', err);
@@ -113,10 +109,7 @@ app.get('/migration_list', (req, res) => {
                 return;
             }
 
-            // Sadece .sql uzantılı dosyaları filtreleme
             const migrationScripts = files.filter(file => path.extname(file) === '.sql');
-
-            // Script listesini istemciye gönderme
             res.status(200).json(migrationScripts);
         });
     } catch (err) {
@@ -128,7 +121,6 @@ app.get('/migration_list', (req, res) => {
 // Rollback list endpoint'i
 app.get('/rollback_list', (req, res) => {
     try {
-        // Rollback scriptlerinin bulunduğu dizini oku
         fs.readdir(rollbackScriptsDirectory, (err, files) => {
             if (err) {
                 console.error('Error reading rollback scripts directory:', err);
@@ -136,10 +128,7 @@ app.get('/rollback_list', (req, res) => {
                 return;
             }
 
-            // Sadece .sql uzantılı dosyaları filtreleme
             const rollbackScripts = files.filter(file => path.extname(file) === '.sql');
-
-            // Script listesini istemciye gönderme
             res.status(200).json(rollbackScripts);
         });
     } catch (err) {
@@ -155,13 +144,21 @@ app.post('/migrate', async (req, res) => {
         const { host, user, password, database } = req.body.target_db_connection;
         
         const sqlScriptPathMigrate = `./scripts/migration/` + source_migrate_file;
+
+        // Hata ayıklama logları ekleyin
+        console.log('Migration işlemine başlandı');
+        console.log('SQL Script Path:', sqlScriptPathMigrate);
+        console.log('Database bağlantı bilgileri:', { host, user, password, database });
+
         await applySqlScript(sqlScriptPathMigrate, database, host, user, password, res);
         
+        console.log('Migration işlemi başarıyla tamamlandı');
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Migrate işlemi sırasında bir hata oluştu.');
+        console.error('Migration işlemi sırasında hata oluştu:', err);
+        res.status(500).send('Migrate işlemi sırasında bir hata oluştu: ' + err.message);
     }
 });
+
 
 // Rollback endpoint'i
 app.post('/rollback', async (req, res) => {
