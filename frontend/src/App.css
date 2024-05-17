@@ -4,6 +4,7 @@
 
 .sidebar {
     width: 200px;
+    height: 200px;
     background-color: #f0f0f0;
     padding: 20px;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
@@ -21,6 +22,7 @@
 
 .sidebar li {
     margin: 10px 0;
+    cursor: pointer;
 }
 
 .sidebar a {
@@ -31,3 +33,32 @@
 .sidebar a:hover {
     color: #007bff;
 }
+
+textarea {
+    width: 100%;
+    height: 400px;
+}
+
+button {
+    margin-top: 10px;
+    padding: 3px 10px;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 10px ;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+
+.div content{
+    display: flex;
+    justify-content: center;
+    margin: 20px;
+    padding: 20px;
+}
+
+
+

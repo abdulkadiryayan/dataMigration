@@ -7,6 +7,7 @@ import Dump from './pages/Dump';
 import Restore from './pages/Restore';
 import Migration from './pages/Migration';
 import Rollback from './pages/Rollback';
+import FileEditor from './pages/FileEditor';
 
 function App() {
     return (
@@ -20,6 +21,7 @@ function App() {
                         <Route path="/restore" element={<Restore />} />
                         <Route path="/migration" element={<Migration />} />
                         <Route path="/rollback" element={<Rollback />} />
+                        <Route path="/file-editor" element={<FileEditor />} />
                     </Routes>
                 </div>
             </div>

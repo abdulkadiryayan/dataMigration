@@ -35,6 +35,41 @@ app.get('/backup_list', (req, res) => {
     });
 });
 
+app.get('/get_script', (req, res) => {
+    const { file, type } = req.query;
+    const directory = type === 'migration' ? migrationScriptsDirectory : rollbackScriptsDirectory;
+    const filePath = path.join(directory, file);
+
+    console.log(`Getting script content: ${filePath}`);
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading file:', err);
+            res.status(500).send('Error reading file: ' + err.message);
+            return;
+        }
+        res.send(data);
+    });
+});
+
+// Yeni Endpoint: Script İçeriğini Kaydetme
+app.post('/save_script', (req, res) => {
+    const { fileName, fileContent, fileType } = req.body;
+    const directory = fileType === 'migration' ? migrationScriptsDirectory : rollbackScriptsDirectory;
+    const filePath = path.join(directory, fileName);
+
+    console.log(`Saving script content: ${filePath}`);
+
+    fs.writeFile(filePath, fileContent, 'utf8', (err) => {
+        if (err) {
+            console.error('Error writing file:', err);
+            res.status(500).send('Error writing file: ' + err.message);
+            return;
+        }
+        res.send('File saved successfully.');
+    });
+});
+
 // Dump endpoint'i
 app.post('/dump', (req, res) => {
     const { target_db_connection } = req.body;
@@ -88,7 +123,7 @@ app.post('/restore', (req, res) => {
     console.log(`Veriler ${importTo.database} veritabanına aktarılıyor`);
 
     exec(`pg_restore --if-exists=append -c -d ${importCon} ${backupFilePath}`, (err, stdout, stderr) => {
-        if (err) {
+        if (!err.message.includes=="already exist") {
             console.error(`exec error: ${err}`);
             res.status(500).send('Veri içe aktarma işlemi sırasında bir hata oluştu. ' + err);
             return;
