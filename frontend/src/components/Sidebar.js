@@ -10,6 +10,7 @@ const Sidebar = () => {
                 <li><Link to="/restore">Restore</Link></li>
                 <li><Link to="/migration">Migration</Link></li>
                 <li><Link to="/rollback">Rollback</Link></li>
+                <li><Link to="/file-editor">File Editor</Link></li>
             </ul>
         </div>
     );
