@@ -52,21 +52,63 @@ app.get('/get_script', (req, res) => {
     });
 });
 
-// Yeni Endpoint: Script İçeriğini Kaydetme
 app.post('/save_script', (req, res) => {
-    const { fileName, fileContent, fileType } = req.body;
+    const { fileName, fileContent, fileType, isNewFile } = req.body;
     const directory = fileType === 'migration' ? migrationScriptsDirectory : rollbackScriptsDirectory;
     const filePath = path.join(directory, fileName);
 
-    console.log(`Saving script content: ${filePath}`);
+    if (isNewFile) {
+        fs.access(filePath, fs.constants.F_OK, (err) => {
+            if (!err) {
+                console.error('File already exists:', filePath);
+                res.status(400).send('File already exists');
+                return;
+            }
 
-    fs.writeFile(filePath, fileContent, 'utf8', (err) => {
+            fs.writeFile(filePath, fileContent, 'utf8', (err) => {
+                if (err) {
+                    console.error('Error writing file:', err);
+                    res.status(500).send('Error writing file: ' + err.message);
+                    return;
+                }
+                res.send('File created successfully.');
+            });
+        });
+    } else {
+        fs.writeFile(filePath, fileContent, 'utf8', (err) => {
+            if (err) {
+                console.error('Error writing file:', err);
+                res.status(500).send('Error writing file: ' + err.message);
+                return;
+            }
+            res.send('File updated successfully.');
+        });
+    }
+});
+
+app.post('/delete_script', (req, res) => {
+    const { fileName, fileType } = req.body;
+    const directory = fileType === 'migration' ? migrationScriptsDirectory : rollbackScriptsDirectory;
+    const filePath = path.join(directory, fileName);
+
+    console.log(`Deleting script: ${filePath}`);
+
+    fs.access(filePath, fs.constants.F_OK, (err) => {
         if (err) {
-            console.error('Error writing file:', err);
-            res.status(500).send('Error writing file: ' + err.message);
+            console.error('File not found:', filePath);
+            res.status(404).send('File not found');
             return;
         }
-        res.send('File saved successfully.');
+
+        fs.unlink(filePath, (err) => {
+            if (err) {
+                console.error('Error deleting file:', err);
+                res.status(500).send('Error deleting file: ' + err.message);
+                return;
+            }
+            console.log('File deleted successfully:', filePath);
+            res.send('File deleted successfully.');
+        });
     });
 });
 
@@ -123,7 +165,7 @@ app.post('/restore', (req, res) => {
     console.log(`Veriler ${importTo.database} veritabanına aktarılıyor`);
 
     exec(`pg_restore --if-exists=append -c -d ${importCon} ${backupFilePath}`, (err, stdout, stderr) => {
-        if (!err.message.includes=="already exist") {
+        if (!err===null && !err.message.includes=="already exist") {
             console.error(`exec error: ${err}`);
             res.status(500).send('Veri içe aktarma işlemi sırasında bir hata oluştu. ' + err);
             return;
