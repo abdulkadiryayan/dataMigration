@@ -216,37 +216,37 @@ app.get('/rollback_list', (req, res) => {
 
 // Migrate endpoint'i
 app.post('/migrate', async (req, res) => {
+    const { from, to, target_db_connection } = req.body;
+    const { host, user, password, database } = target_db_connection;
+    const scriptPath = path.join(migrationScriptsDirectory, `migration_v${from}_to_v${to}.sql`);
+
     try {
-        const { source_migrate_file } = req.body;
-        const { host, user, password, database } = req.body.target_db_connection;
-        
-        const sqlScriptPathMigrate = `./scripts/migration/` + source_migrate_file;
-
-        // Hata ayıklama logları ekleyin
-        console.log('Migration işlemine başlandı');
-        console.log('SQL Script Path:', sqlScriptPathMigrate);
-        console.log('Database bağlantı bilgileri:', { host, user, password, database });
-
-        await applySqlScript(sqlScriptPathMigrate, database, host, user, password, res);
-        
-        console.log('Migration işlemi başarıyla tamamlandı');
-    } catch (err) {
-        console.error('Migration işlemi sırasında hata oluştu:', err);
-        res.status(500).send('Migrate işlemi sırasında bir hata oluştu: ' + err.message);
+        console.log(`Migrating from v${from} to v${to} using script: ${scriptPath}`);
+        await applySqlScript(scriptPath, database, host, user, password);
+        res.send(`Migrated from v${from} to v${to} successfully.`);
+    } catch (error) {
+        console.error(`Error migrating from v${from} to v${to}:`, error);
+        if (!res.headersSent) {
+            res.status(500).send(`Error migrating from v${from} to v${to}: ${error.message}`);
+        }
     }
 });
 
-
 // Rollback endpoint'i
 app.post('/rollback', async (req, res) => {
+    const { from, to, target_db_connection } = req.body;
+    const { host, user, password, database } = target_db_connection;
+    const scriptPath = path.join(rollbackScriptsDirectory, `rollback_v${from}_to_v${to}.sql`);
+
     try {
-        const { source_rollback_file } = req.body;
-        const { host, user, password, database } = req.body.target_db_connection;
-        const sqlScriptPathRollback = `./scripts/rollback/` + source_rollback_file;
-        await applySqlScript(sqlScriptPathRollback, database, host, user, password,res);
-        res.status(200).send(`Rollback işlemi ${database} veritabanı için başarıyla tamamlandı.`);
-    } catch (err) {
-        console.error(err);
+        console.log(`Rolling back from v${from} to v${to} using script: ${scriptPath}`);
+        await applySqlScript(scriptPath, database, host, user, password);
+        res.send(`Rolled back from v${from} to v${to} successfully.`);
+    } catch (error) {
+        console.error(`Error rolling back from v${from} to v${to}:`, error);
+        if (!res.headersSent) {
+            res.status(500).send(`Error rolling back from v${from} to v${to}: ${error.message}`);
+        }
     }
 });
 

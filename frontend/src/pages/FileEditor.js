@@ -15,7 +15,10 @@ const FileEditor = () => {
 
     const fetchFileList = useCallback(() => {
         axios.get(`http://localhost:3000/${fileType}_list`)
-            .then(response => setFiles(response.data))
+            .then(response => {
+                const sortedFiles = response.data.sort(); // Dosya isimlerini alfabetik olarak sırala
+                setFiles(sortedFiles);
+            })
             .catch(error => console.error('Error fetching file list:', error));
     }, [fileType]);
 
@@ -70,8 +73,8 @@ const FileEditor = () => {
                 toast.error('A file with the same name already exists.');
             } else {
                 setSelectedFile(newFile);
-                setFileContent('//DDL\n\n\n\n//DML');
-                setFiles([...files, newFile]);
+                setFileContent(`--V${toVersion}`);
+                setFiles([...files, newFile].sort());
                 setIsNewFile(true);
                 setIsDirty(true);
                 toast.success('File created successfully.');
@@ -137,9 +140,14 @@ const FileEditor = () => {
         fetchFileList();
     };
 
+    // const control = fileContent.charAt(3)
+    
+    // var versionNum = control
+    
     return (
         <div>
             <h2>File Editor</h2>
+            {/* <h3>{isNaN(control) ? null : versionNum }</h3> */}
             <ToastContainer position="top-right" autoClose={10000} />
             <div>
                 <label>
@@ -163,7 +171,7 @@ const FileEditor = () => {
                     Rollback
                 </label>
             </div>
-            <div>
+            <div className='fe-select'>
                 <select value={selectedFile} onChange={handleFileSelect}>
                     <option value="">Select a file</option>
                     {files.map(file => (
@@ -177,14 +185,14 @@ const FileEditor = () => {
                 <button onClick={handleCreateNewFile}>Create New File</button>
             </div>
             <div className='version'>
-                From
+                <label>From:</label>
                 <input
                     type="number"
                     value={fromVersion}
                     min={fileType === 'migration' ? 1 : 2}
                     onChange={handleFromVersionChange}
                 />
-                To
+                <label className='label-to'>To:</label>
                 <input
                     type="number"
                     value={toVersion}

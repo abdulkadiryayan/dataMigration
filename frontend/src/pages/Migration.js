@@ -1,28 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 
 const Migration = () => {
-    const [migrationScripts, setMigrationScripts] = useState([]);
-    const [selectedScript, setSelectedScript] = useState('');
+    const [fromVersion, setFromVersion] = useState(1);
+    const [toVersion, setToVersion] = useState(2);
     const [targetDbConnection, setTargetDbConnection] = useState({
         host: '',
         user: '',
         password: '',
         database: ''
     });
-
-    useEffect(() => {
-        axios.get('http://localhost:3000/migration_list')
-            .then(response => setMigrationScripts(response.data))
-            .catch(error => {
-                console.error('Error during migration list:', error);
-                if (error.response) {
-                    alert('Error during migration list: ' + error.response.data);
-                } else {
-                    alert('Error during migration list: ' + error.message);
-                }
-            });
-    }, []);
+    const [errorMessage, setErrorMessage] = useState(''); 
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -32,33 +20,51 @@ const Migration = () => {
         });
     };
 
-    const handleMigrate = () => {
-        axios.post('http://localhost:3000/migrate', { source_migrate_file: selectedScript, target_db_connection: targetDbConnection })
-            .then(response => alert(response.data))
-            .catch(error => {
-                console.error('Error during migrate:', error);
-                if (error.response) {
-                    alert('Error during migrate: ' + error.response.data);
-                } else {
-                    alert('Error during migrate: ' + error.message);
-                }
-            });
+    const handleMigrate = async () => {
+        setErrorMessage(''); 
+        for (let version = fromVersion; version < toVersion; version++) {
+            const nextVersion = version + 1;
+            try {
+                await axios.post('http://localhost:3000/migrate', {
+                    from: version,
+                    to: nextVersion,
+                    target_db_connection: targetDbConnection
+                });
+                alert(`Successfully migrated from v${version} to v${nextVersion}`);
+            } catch (error) {
+                console.error(error);
+                setErrorMessage(`Error migrating from v${version} to v${nextVersion}: ${error.response ? error.response.data : error.message}`);
+                break;
+            }
+        }
     };
 
     return (
         <div>
             <h2>Migration</h2>
-            <select onChange={e => setSelectedScript(e.target.value)}>
-                <option value="">Select Script</option>
-                {migrationScripts.map(script => (
-                    <option key={script} value={script}>{script}</option>
-                ))}
-            </select>
+            
+            <div className="version">
+                <label>From:</label>
+                <input
+                    type="number"
+                    value={fromVersion}
+                    min="1"
+                    onChange={(e) => setFromVersion(parseInt(e.target.value, 10))}
+                />
+                <label className='label-to'>To:</label>
+                <input
+                    type="number"
+                    value={toVersion}
+                    min={fromVersion + 1}
+                    onChange={(e) => setToVersion(parseInt(e.target.value, 10))}
+                />
+            </div>
             <input type="text" name="host" placeholder="Host" onChange={handleChange} />
             <input type="text" name="user" placeholder="User" onChange={handleChange} />
             <input type="password" name="password" placeholder="Password" onChange={handleChange} />
             <input type="text" name="database" placeholder="Database" onChange={handleChange} />
             <button onClick={handleMigrate}>Migrate</button>
+            {errorMessage && <div className="error">{errorMessage}</div>} {/* Yeni eklendi */}
         </div>
     );
 };
