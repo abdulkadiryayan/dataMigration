@@ -1,37 +1,21 @@
-const { Client } = require('pg');
-const fs = require('fs');
+const { exec } = require('child_process');
 
-async function applySqlScript(scriptPath, targetDatabase, host, user, password, res) {
-    const connectionString = `postgresql://${user}:${password}@${host}:5432/${targetDatabase}`;
-    const client = new Client({ connectionString });
-
-    try {
-        console.log('SQL script dosyası okunuyor:', scriptPath);
-        let sqlScript = fs.readFileSync(scriptPath, 'utf8');
-        console.log('SQL script çalıştırılıyor...');
-
-        await client.connect();
-        console.log(`Veritabanına bağlandı: ${connectionString}`);
-        
-        await client.query(sqlScript);
-        console.log('SQL script başarıyla çalıştırıldı.');
-        res.send('SQL script başarıyla uygulandı.');
-        return; // İşlem başarılı, burada fonksiyonu sonlandır
-    } catch (err) {
-        console.error('Hata:', err);
-        if (err.code === 'ENOENT') {
-            res.status(404).send('Dosya bulunamadı: Lütfen dosya yolunu kontrol edin.');
-        } else {
-            res.status(500).send('Veritabanı işlemi sırasında bir hata oluştu: ' + err.message);
-        }
-        return; // Hata durumunda işlemi burada sonlandır
-    } finally {
-        if (!res.headersSent) {
-            await client.end();
-            console.log('Veritabanı bağlantısı sonlandırıldı.');
-        }
-    }
-}
-
+const applySqlScript = (scriptPath, database, host, user, password) => {
+    return new Promise((resolve, reject) => {
+        const command = `psql -h ${host} -U ${user} -d ${database} -f ${scriptPath} --set ON_ERROR_STOP=on`;
+        exec(command, { env: { PGPASSWORD: password } }, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing SQL script: ${stderr}`);
+                reject(new Error(stderr));
+            } else if (stderr) {
+                console.error(`SQL script error: ${stderr}`);
+                reject(new Error(stderr));
+            } else {
+                console.log(`SQL script executed successfully: ${stdout}`);
+                resolve(stdout);
+            }
+        });
+    });
+};
 
 module.exports = { applySqlScript };

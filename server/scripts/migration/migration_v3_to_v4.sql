@@ -1,0 +1,5 @@
+
+ALTER TABLE customer 
+ADD COLUMN test VARCHAR(10);
+
+

@@ -1,0 +1,3 @@
+ALTER TABLE customer 
+ADD COLUMN test3 VARCHAR(10);
+
