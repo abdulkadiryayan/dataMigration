@@ -11,6 +11,7 @@ body {
 
 .sidebar {
     width: 200px;
+    height: 300px;
     background-color: #ffffff;
     padding: 20px;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
@@ -21,6 +22,7 @@ body {
 .content {
     flex: 1;
     padding: 20px;
+    margin-left: 60px;
 }
 
 .sidebar ul {
@@ -76,8 +78,9 @@ select{
     border-radius: 5px;
     margin-left: 2px;
 }
-.fe-select{
+.fe-select select{
     margin-top: 10px;
+    width: 220px;
 }
 
 button {
@@ -104,13 +107,16 @@ button:hover {
 }
 .version{
     display: inline-flex;
-    padding-left: 18px;
     margin-top: 20px;
     
 }
 .version input{
-    width: 50px;
+    width: 100px;
     display: flex;
+}
+.inputs{
+    display: flex;
+    margin-top: 20px;
 }
 .new-file{
     display: inline;
