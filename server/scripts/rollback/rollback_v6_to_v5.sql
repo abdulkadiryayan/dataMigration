@@ -1,5 +1,5 @@
 
-
-DROP TABLE emails
+ALTER TABLE customer
+DROP COLUMN test3
 
 

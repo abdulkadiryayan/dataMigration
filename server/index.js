@@ -2,22 +2,136 @@ const express = require('express');
 const cors = require('cors');
 const { exec } = require('child_process');
 const fs = require('fs');
-require('dotenv').config();
 const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const { applySqlScript } = require('./sqlScriptFunc');
 
 const app = express();
 
-app.use(cors()); // CORS middleware ekleyin
+app.use(cors());
 app.use(express.json());
 
-// Port
 const PORT = process.env.PORT || 3000;
+
+const sqliteDb = new sqlite3.Database(path.join(__dirname, '../database/db.sqlite'));
+
+const getPostgresConfig = (configName) => {
+    return new Promise((resolve, reject) => {
+        sqliteDb.get("SELECT * FROM configurations WHERE config_name = ?", [configName], (err, row) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(row);
+            }
+        });
+    });
+};
+
+let pools = {};
+
+const initializePostgresConnections = async () => {
+    const configNames = ['config1', 'config2','config3']; // Eklediğiniz tüm konfigürasyon isimlerini buraya ekleyin
+    for (const configName of configNames) {
+        const config = await getPostgresConfig(configName);
+        pools[configName] = new Pool({
+            host: config.host,
+            user: config.user,
+            password: config.password,
+            database: config.database,
+            port: config.port
+        });
+    }
+};
+
+initializePostgresConnections().catch(err => {
+    console.error('Error initializing PostgreSQL connection:', err);
+    process.exit(1);
+});
 
 // Dosya yolları
 const backupsDirectory = './backups/';
 const rollbackScriptsDirectory = './scripts/rollback';
 const migrationScriptsDirectory = './scripts/migration';
+
+const fileExists = (filePath) => {
+    return new Promise((resolve, reject) => {
+        fs.access(filePath, fs.constants.F_OK, (err) => {
+            if (err) {
+                reject(new Error(`File not found: ${filePath}`));
+            } else {
+                resolve(true);
+            }
+        });
+    });
+};
+
+const checkAllFilesExist = async (filePaths) => {
+    for (const filePath of filePaths) {
+        await fileExists(filePath);
+    }
+};
+
+// Endpoint to get the current version from PostgreSQL
+app.get('/current_version', async (req, res) => {
+    const { configName } = req.query;
+    try {
+        const result = await pools[configName].query('SELECT version_number FROM version ORDER BY id DESC LIMIT 1');
+        res.json(result.rows[0].version_number);
+    } catch (err) {
+        console.error('Error fetching current version:', err);
+        res.status(500).send('Error fetching current version');
+    }
+});
+
+// Endpoint to get PostgreSQL configurations from SQLite
+app.get('/configurations', async (req, res) => {
+    sqliteDb.all("SELECT DISTINCT config_name FROM configurations", (err, rows) => {
+        if (err) {
+            console.error('Error fetching configurations:', err);
+            res.status(500).send('Error fetching configurations');
+        } else {
+            res.json(rows);
+        }
+    });
+});
+
+// Endpoint to get configuration details from SQLite
+app.get('/config_details', async (req, res) => {
+    const { configKey } = req.query;
+    sqliteDb.get("SELECT * FROM configurations WHERE config_name = ?", [configKey], (err, row) => {
+        if (err) {
+            console.error('Error fetching configuration details:', err);
+            res.status(500).send('Error fetching configuration details');
+        } else {
+            res.json(row);
+        }
+    });
+});
+
+app.post('/check_migration_files', async (req, res) => {
+    const { from, to } = req.body;
+    const scriptPath = path.join(migrationScriptsDirectory, `migration_v${from}_to_v${to}.sql`);
+
+    try {
+        await fileExists(scriptPath);
+        res.send({ success: true });
+    } catch (error) {
+        res.send({ success: false, message: error.message });
+    }
+});
+
+app.post('/check_rollback_files', async (req, res) => {
+    const { from, to } = req.body;
+    const scriptPath = path.join(rollbackScriptsDirectory, `rollback_v${from}_to_v${to}.sql`);
+
+    try {
+        await fileExists(scriptPath);
+        res.send({ success: true });
+    } catch (error) {
+        res.send({ success: false, message: error.message });
+    }
+});
 
 // Backup dosyalarını listeleme endpoint'i
 app.get('/backup_list', (req, res) => {
@@ -149,7 +263,7 @@ app.post('/dump', (req, res) => {
 
 // Restore endpoint'i
 app.post('/restore', (req, res) => {
-    const { source_backup_file, target_db_connection } = req.body;
+    const { source_backup_file, target_db_connection,fullRestore } = req.body;
     const { host, user, password, database } = target_db_connection;
 
     const importTo = {
@@ -164,7 +278,22 @@ app.post('/restore', (req, res) => {
 
     console.log(`Veriler ${importTo.database} veritabanına aktarılıyor`);
 
-    exec(`pg_restore --if-exists=append -c -d ${importCon} ${backupFilePath}`, (err, stdout, stderr) => {
+    let restoreCommand;
+
+    if(fullRestore) {
+        restoreCommand = `
+            dropdb ${importCon} &&
+            createdb ${importCon} &&
+            pg_restore -c -d ${importCon} ${backupFilePath}
+        `;
+        res.status(200).send('Database dropped and created again')
+    }else{
+        restoreCommand = `pg_restore --data-only -d ${importCon} ${backupFilePath}`;
+        res.status(200).send('Data only executed')
+    }
+
+
+    exec(restoreCommand, (err, stdout, stderr) => {
         if (!err===null && !err.message.includes=="already exist") {
             console.error(`exec error: ${err}`);
             res.status(500).send('Veri içe aktarma işlemi sırasında bir hata oluştu. ' + err);
@@ -172,7 +301,7 @@ app.post('/restore', (req, res) => {
         }
 
         console.log(`İçe aktarma işlemi tamamlandı.`);
-        res.status(200).send('İçe aktarma işlemi başarıyla tamamlandı.');
+        
     });
 });
 
@@ -216,13 +345,20 @@ app.get('/rollback_list', (req, res) => {
 
 // Migrate endpoint'i
 app.post('/migrate', async (req, res) => {
-    const { from, to, target_db_connection } = req.body;
+    const { from, to, target_db_connection, configName } = req.body;
     const { host, user, password, database } = target_db_connection;
     const scriptPath = path.join(migrationScriptsDirectory, `migration_v${from}_to_v${to}.sql`);
+    const pool = pools[configName];
+
+    if (!pool) {
+        return res.status(404).send(`No pool found for config: ${configName}`);
+    }
 
     try {
-        console.log(`Migrating from v${from} to v${to} using script: ${scriptPath}`);
+        await fileExists(scriptPath);
+        console.log(`Migrating using script: ${scriptPath}`);
         await applySqlScript(scriptPath, database, host, user, password);
+        await pool.query('INSERT INTO version (version_number) VALUES ($1)', [to]);
         res.send(`Migrated from v${from} to v${to} successfully.`);
     } catch (error) {
         console.error(`Error migrating from v${from} to v${to}:`, error);
@@ -234,13 +370,20 @@ app.post('/migrate', async (req, res) => {
 
 // Rollback endpoint'i
 app.post('/rollback', async (req, res) => {
-    const { from, to, target_db_connection } = req.body;
+    const { from, to, target_db_connection, configName } = req.body;
     const { host, user, password, database } = target_db_connection;
     const scriptPath = path.join(rollbackScriptsDirectory, `rollback_v${from}_to_v${to}.sql`);
+    const pool = pools[configName];
+
+    if (!pool) {
+        return res.status(404).send(`No pool found for config: ${configName}`);
+    }
 
     try {
-        console.log(`Rolling back from v${from} to v${to} using script: ${scriptPath}`);
+        await fileExists(scriptPath);
+        console.log(`Rolling back using script: ${scriptPath}`);
         await applySqlScript(scriptPath, database, host, user, password);
+        await pool.query('INSERT INTO version (version_number) VALUES ($1)', [to]);
         res.send(`Rolled back from v${from} to v${to} successfully.`);
     } catch (error) {
         console.error(`Error rolling back from v${from} to v${to}:`, error);

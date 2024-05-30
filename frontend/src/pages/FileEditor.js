@@ -8,15 +8,15 @@ const FileEditor = () => {
     const [files, setFiles] = useState([]);
     const [selectedFile, setSelectedFile] = useState('');
     const [fileContent, setFileContent] = useState('');
-    const [fromVersion, setFromVersion] = useState(1);
-    const [toVersion, setToVersion] = useState(2);
+    const [fromVersion, setFromVersion] = useState('');
+    const [toVersion, setToVersion] = useState('');
     const [isNewFile, setIsNewFile] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
 
     const fetchFileList = useCallback(() => {
         axios.get(`http://localhost:3000/${fileType}_list`)
             .then(response => {
-                const sortedFiles = response.data.sort(); // Dosya isimlerini alfabetik olarak sırala
+                const sortedFiles = response.data.sort();
                 setFiles(sortedFiles);
             })
             .catch(error => console.error('Error fetching file list:', error));
@@ -73,7 +73,7 @@ const FileEditor = () => {
                 toast.error('A file with the same name already exists.');
             } else {
                 setSelectedFile(newFile);
-                setFileContent(`--V${toVersion}`);
+                setFileContent(`-- Migration script from version ${fromVersion} to ${toVersion}`);
                 setFiles([...files, newFile].sort());
                 setIsNewFile(true);
                 setIsDirty(true);
@@ -107,14 +107,13 @@ const FileEditor = () => {
     };
 
     const handleFromVersionChange = (e) => {
-        const from = parseInt(e.target.value, 10);
-        if (fileType === 'migration' && from >= 1) {
-            setFromVersion(from);
-            setToVersion(from + 1);
-        } else if (fileType === 'rollback' && from >= 2) {
-            setFromVersion(from);
-            setToVersion(from - 1);
-        }
+        const from = e.target.value;
+        setFromVersion(from);
+    };
+
+    const handleToVersionChange = (e) => {
+        const to = e.target.value;
+        setToVersion(to);
     };
 
     const handleRadioChange = (e) => {
@@ -134,22 +133,17 @@ const FileEditor = () => {
         setFileType(newFileType);
         setSelectedFile('');
         setFiles([]);
-        setFromVersion(newFileType === 'migration' ? 1 : 2);
-        setToVersion(newFileType === 'migration' ? 2 : 1);
-        setIsDirty(false); 
+        setFromVersion('');
+        setToVersion('');
+        setIsDirty(false);
         fetchFileList();
     };
 
-    // const control = fileContent.charAt(3)
-    
-    // var versionNum = control
-    
     return (
         <div>
-            <h2>File Editor</h2>
-            {/* <h3>{isNaN(control) ? null : versionNum }</h3> */}
-            <ToastContainer position="top-right" autoClose={10000} />
-            <div>
+            <h2 style={{display:"inline"}}>File Editor</h2>
+            <ToastContainer position="top-right" autoClose={5000} />
+            <div style={{marginTop:"20px"}}>
                 <label>
                     <input
                         type="radio"
@@ -187,16 +181,15 @@ const FileEditor = () => {
             <div className='version'>
                 <label>From:</label>
                 <input
-                    type="number"
+                    type="text"
                     value={fromVersion}
-                    min={fileType === 'migration' ? 1 : 2}
                     onChange={handleFromVersionChange}
                 />
                 <label className='label-to'>To:</label>
                 <input
-                    type="number"
+                    type="text"
                     value={toVersion}
-                    readOnly
+                    onChange={handleToVersionChange}
                 />
             </div>
             {selectedFile && (
