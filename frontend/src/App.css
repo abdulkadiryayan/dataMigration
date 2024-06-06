@@ -11,7 +11,7 @@ body {
 
 .sidebar {
     width: 200px;
-    height: 300px;
+    height:350px;
     background-color: #ffffff;
     padding: 20px;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
@@ -71,6 +71,10 @@ input{
 }
 .version .label-to{
     margin-left: 10px;
+    margin-right: 10px;
+}
+.version .target-version-select {
+    margin-top: 10px; 
 }
 select{
     width: 170px;
@@ -106,7 +110,8 @@ button:hover {
     padding: 20px;
 }
 .version{
-    display: inline-flex;
+    display: flex;
+    align-items: center;
     margin-top: 20px;
     
 }

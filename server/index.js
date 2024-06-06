@@ -78,12 +78,6 @@ const fileExists = (filePath) => {
     });
 };
 
-const checkAllFilesExist = async (filePaths) => {
-    for (const filePath of filePaths) {
-        await fileExists(filePath);
-    }
-};
-
 // Endpoint to get the current version from PostgreSQL
 app.get('/current_version', async (req, res) => {
     const { configName } = req.query;
@@ -123,20 +117,54 @@ app.get('/config_details', async (req, res) => {
 });
 
 app.post('/add_configuration', async (req, res) => {
-    const { config_name, host, user, password, database, port } = req.body;
-    sqliteDb.run("INSERT INTO configurations (config_name, host, user, password, database, port) VALUES (?, ?, ?, ?, ?, ?)", [config_name, host, user, password, database, port], function (err) {
+    const { config_name, host, user, password, database, port, addVersionTable } = req.body;
+    sqliteDb.run("INSERT INTO configurations (config_name, host, user, password, database, port) VALUES (?, ?, ?, ?, ?, ?)", [config_name, host, user, password, database, port], async function (err) {
         if (err) {
             console.error('Error adding configuration:', err);
-            res.status(500).send('Error adding configuration');
+            return res.status(500).send('Error adding configuration');
+        }
+
+        if (addVersionTable) {
+            const client = new Client({
+                host,
+                user,
+                password,
+                database,
+                port
+            });
+
+            try {
+                await client.connect();
+                const checkTableQuery = `
+                    DO $$ 
+                    BEGIN 
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'version') THEN 
+                            CREATE TABLE version (
+                                id SERIAL PRIMARY KEY,
+                                version_number VARCHAR(255) NOT NULL
+                            );
+                            INSERT INTO version (version_number) VALUES ('1.0.0');
+                        END IF;
+                    END $$;
+                `;
+                await client.query(checkTableQuery);
+                await client.end();
+                res.send('Configuration and version table added successfully');
+            } catch (error) {
+                console.error('Error creating version table:', error);
+                res.status(500).send('Error creating version table');
+            }
         } else {
             res.send('Configuration added successfully');
         }
     });
 });
 
+
 app.put('/update_configuration', async (req, res) => {
-    const { config_name, host, user, password, database, port } = req.body;
-    sqliteDb.run("UPDATE configurations SET host = ?, user = ?, password = ?, database = ?, port = ? WHERE config_name = ?", [host, user, password, database, port, config_name], function (err) {
+    const { original_config_name, config_name, host, user, password, database, port } = req.body;
+    sqliteDb.run("UPDATE configurations SET config_name = ?, host = ?, user = ?, password = ?, database = ?, port = ? WHERE config_name = ?", 
+    [config_name, host, user, password, database, port, original_config_name], function (err) {
         if (err) {
             console.error('Error updating configuration:', err);
             res.status(500).send('Error updating configuration');
@@ -145,6 +173,9 @@ app.put('/update_configuration', async (req, res) => {
         }
     });
 });
+
+
+
 
 app.delete('/delete_configuration', async (req, res) => {
     const { config_name } = req.body;

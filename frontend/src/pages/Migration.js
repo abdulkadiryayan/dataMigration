@@ -131,6 +131,7 @@ const Migration = () => {
                                 <label>Current Version: <b>{currentVersion}</b></label>
                                 <label className='label-to'>To:</label>
                                 <select
+                                    className="target-version-select"
                                     value={toVersion}
                                     onChange={(e) => setToVersion(e.target.value)}
                                 >

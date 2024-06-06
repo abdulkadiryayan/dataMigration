@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import './ConfigManager.css';
 
 const ConfigManager = () => {
     const [configurations, setConfigurations] = useState([]);
@@ -12,6 +13,8 @@ const ConfigManager = () => {
         database: '',
         port: ''
     });
+    const [originalConfigName, setOriginalConfigName] = useState(''); // Added state to store original config name
+    const [addVersionTable, setAddVersionTable] = useState(false); // Added state for checkbox
     const [isEditing, setIsEditing] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -35,6 +38,7 @@ const ConfigManager = () => {
             try {
                 const response = await axios.get(`http://localhost:3000/config_details?configKey=${configKey}`);
                 setConfigDetails(response.data);
+                setOriginalConfigName(response.data.config_name); // Set original config name
                 setIsEditing(true);
             } catch (error) {
                 console.error('Error fetching configuration details:', error);
@@ -49,13 +53,17 @@ const ConfigManager = () => {
         setConfigDetails(prevDetails => ({ ...prevDetails, [name]: value }));
     };
 
+    const handleCheckboxChange = (e) => {
+        setAddVersionTable(e.target.checked); // Checkbox change handler
+    };
+
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         try {
             if (isEditing) {
-                await axios.put('http://localhost:3000/update_configuration', configDetails);
+                await axios.put('http://localhost:3000/update_configuration', { ...configDetails, original_config_name: originalConfigName });
             } else {
-                await axios.post('http://localhost:3000/add_configuration', configDetails);
+                await axios.post('http://localhost:3000/add_configuration', { ...configDetails, addVersionTable });
             }
             fetchConfigurations();
             resetForm();
@@ -88,6 +96,7 @@ const ConfigManager = () => {
             port: ''
         });
         setSelectedConfig('');
+        setAddVersionTable(false); // Reset checkbox
         setIsEditing(false);
         setErrorMessage('');
     };
@@ -95,10 +104,10 @@ const ConfigManager = () => {
     return (
         <div>
             <h2>Configuration Manager</h2>
-            <div>
-                <label>Configuration:</label>
+            <div style={{ display: "inline" }}>
+                <label style={{ display: "inline" }}>Configuration:</label>
                 <select onChange={handleConfigChange} value={selectedConfig}>
-                    <option value="">Select Configuration</option>
+                    <option value="">Add New Configuration</option>
                     {configurations.map(config => (
                         <option key={config.config_name} value={config.config_name}>
                             {config.config_name}
@@ -131,6 +140,14 @@ const ConfigManager = () => {
                     <label>Port:</label>
                     <input type="text" name="port" value={configDetails.port} onChange={handleInputChange} required />
                 </div>
+                {!isEditing && (
+                    <div>
+                        <label>
+                            <input type="checkbox" checked={addVersionTable} onChange={handleCheckboxChange} />
+                            Add Version Table
+                        </label>
+                    </div>
+                )}
                 <div>
                     <button type="submit">{isEditing ? 'Update' : 'Add'}</button>
                     {isEditing && <button type="button" onClick={handleDelete}>Delete</button>}
