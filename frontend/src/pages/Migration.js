@@ -13,20 +13,28 @@ const Migration = () => {
         port: ''
     });
     const [currentVersion, setCurrentVersion] = useState('');
+    const [migrationScripts, setMigrationScripts] = useState([]);
     const [toVersion, setToVersion] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [showReview, setShowReview] = useState(false);
+    const [executedScripts, setExecutedScripts] = useState([]);
 
     useEffect(() => {
         axios.get('http://localhost:3000/configurations')
             .then(response => setConfigurations(response.data))
             .catch(error => console.error('Error fetching configurations:', error));
+
+        axios.get('http://localhost:3000/migration_list')
+            .then(response => {
+                const versions = response.data.map(script => script.match(/\d+(\.\d+)+/)[0]);
+                setMigrationScripts(versions);
+            })
+            .catch(error => console.error('Error fetching migration scripts:', error));
     }, []);
 
     const handleConfigChange = (e) => {
         const configKey = e.target.value;
         setSelectedConfig(configKey);
-
         axios.get(`http://localhost:3000/config_details?configKey=${configKey}`)
             .then(response => {
                 setTargetDbConnection(response.data);
@@ -42,8 +50,8 @@ const Migration = () => {
             alert('Please select a configuration');
             return;
         }
-        if(toVersion.length===0){
-            alert('Please select target version');
+        if (!toVersion) {
+            alert('Please select a target version');
             return;
         }
         setShowReview(true);
@@ -58,13 +66,14 @@ const Migration = () => {
 
             if (response.data.success) {
                 try {
-                    await axios.post('http://localhost:3000/migrate', {
+                    const migrateResponse = await axios.post('http://localhost:3000/migrate', {
                         from: currentVersion,
                         to: toVersion,
                         target_db_connection: targetDbConnection,
                         configName: selectedConfig
                     });
-                    alert(`Successfully migrated from v${currentVersion} to v${toVersion}`);
+                    setExecutedScripts(migrateResponse.data.executedScripts);
+                    //alert(`Successfully migrated from v${currentVersion} to v${toVersion}`);
                     setCurrentVersion(toVersion);
                 } catch (error) {
                     console.error(error);
@@ -94,7 +103,8 @@ const Migration = () => {
                         'User': targetDbConnection.user,
                         'Password': targetDbConnection.password,
                         'Database': targetDbConnection.database,
-                        'Port': targetDbConnection.port
+                        'Port': targetDbConnection.port,
+                        
                     }}
                     onConfirm={confirmMigrate}
                     onCancel={cancelMigrate}
@@ -120,12 +130,15 @@ const Migration = () => {
                             <div className="version">
                                 <label>Current Version: <b>{currentVersion}</b></label>
                                 <label className='label-to'>To:</label>
-                                <input
-                                    type="text"
+                                <select
                                     value={toVersion}
                                     onChange={(e) => setToVersion(e.target.value)}
-                                    placeholder="Target version"
-                                />
+                                >
+                                    <option value="">Select Target Version</option>
+                                    {migrationScripts.map(script => (
+                                        <option key={script} value={script}>{script}</option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div className="config-card">
@@ -139,6 +152,7 @@ const Migration = () => {
                         </>
                     )}
                     {errorMessage && <div className="error">{errorMessage}</div>}
+                    {executedScripts && <pre className="exec">{executedScripts.join('\n')}</pre>}
                 </>
             )}
         </div>

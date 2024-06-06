@@ -11,6 +11,7 @@ const Sidebar = () => {
                 <li><Link to="/migration">Migration</Link></li>
                 <li><Link to="/rollback">Rollback</Link></li>
                 <li><Link to="/file-editor">File Editor</Link></li>
+                <li><Link to="/config-manager">Config Manager</Link></li>
             </ul>
         </div>
     );

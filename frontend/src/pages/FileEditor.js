@@ -8,8 +8,7 @@ const FileEditor = () => {
     const [files, setFiles] = useState([]);
     const [selectedFile, setSelectedFile] = useState('');
     const [fileContent, setFileContent] = useState('');
-    const [fromVersion, setFromVersion] = useState('');
-    const [toVersion, setToVersion] = useState('');
+    const [version, setVersion] = useState('');
     const [isNewFile, setIsNewFile] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
 
@@ -56,6 +55,11 @@ const FileEditor = () => {
     };
 
     const handleSave = () => {
+        if (!selectedFile) {
+            toast.error('Please select or create a file first.');
+            return;
+        }
+
         axios.post('http://localhost:3000/save_script', { fileName: selectedFile, fileContent, fileType, isNewFile })
             .then(response => {
                 toast.success(response.data);
@@ -67,20 +71,21 @@ const FileEditor = () => {
     };
 
     const handleCreateNewFile = () => {
-        if (fromVersion !== toVersion) {
-            const newFile = `${fileType}_v${fromVersion}_to_v${toVersion}.sql`;
-            if (files.includes(newFile)) {
-                toast.error('A file with the same name already exists.');
-            } else {
-                setSelectedFile(newFile);
-                setFileContent(`-- Migration script from version ${fromVersion} to ${toVersion}`);
-                setFiles([...files, newFile].sort());
-                setIsNewFile(true);
-                setIsDirty(true);
-                toast.success('File created successfully.');
-            }
+        if (!version) {
+            toast.error('Please enter a version.');
+            return;
+        }
+
+        const newFile = `${fileType}_v${version}.sql`;
+        if (files.includes(newFile)) {
+            toast.error('A file with the same name already exists.');
         } else {
-            toast.error('Please ensure "from" and "to" versions are different');
+            setSelectedFile(newFile);
+            setFileContent(`-- ${fileType} script for version ${version}`);
+            setFiles([...files, newFile].sort());
+            setIsNewFile(true);
+            setIsDirty(true);
+            toast.success('File created successfully.');
         }
     };
 
@@ -106,16 +111,6 @@ const FileEditor = () => {
         }
     };
 
-    const handleFromVersionChange = (e) => {
-        const from = e.target.value;
-        setFromVersion(from);
-    };
-
-    const handleToVersionChange = (e) => {
-        const to = e.target.value;
-        setToVersion(to);
-    };
-
     const handleRadioChange = (e) => {
         if (isNewFile && isDirty) {
             const confirm = window.confirm('You have unsaved changes. Do you want to save the file?');
@@ -133,17 +128,16 @@ const FileEditor = () => {
         setFileType(newFileType);
         setSelectedFile('');
         setFiles([]);
-        setFromVersion('');
-        setToVersion('');
+        setVersion('');
         setIsDirty(false);
         fetchFileList();
     };
 
     return (
         <div>
-            <h2 style={{display:"inline"}}>File Editor</h2>
+            <h2 style={{ display: "inline" }}>File Editor</h2>
             <ToastContainer position="top-right" autoClose={5000} />
-            <div style={{marginTop:"20px"}}>
+            <div style={{ marginTop: "20px" }}>
                 <label>
                     <input
                         type="radio"
@@ -179,17 +173,11 @@ const FileEditor = () => {
                 <button onClick={handleCreateNewFile}>Create New File</button>
             </div>
             <div className='version'>
-                <label>From:</label>
+                <label>Version:</label>
                 <input
                     type="text"
-                    value={fromVersion}
-                    onChange={handleFromVersionChange}
-                />
-                <label className='label-to'>To:</label>
-                <input
-                    type="text"
-                    value={toVersion}
-                    onChange={handleToVersionChange}
+                    value={version}
+                    onChange={(e) => setVersion(e.target.value)}
                 />
             </div>
             {selectedFile && (
