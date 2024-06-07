@@ -11,14 +11,20 @@ const FileEditor = () => {
     const [version, setVersion] = useState('');
     const [isNewFile, setIsNewFile] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const fetchFileList = useCallback(() => {
+        setIsLoading(true);
         axios.get(`http://localhost:3000/${fileType}_list`)
             .then(response => {
                 const sortedFiles = response.data.sort();
                 setFiles(sortedFiles);
+                setIsLoading(false);
             })
-            .catch(error => console.error('Error fetching file list:', error));
+            .catch(error => {
+                console.error('Error fetching file list:', error);
+                setIsLoading(false);
+            });
     }, [fileType]);
 
     useEffect(() => {
@@ -160,7 +166,7 @@ const FileEditor = () => {
                 </label>
             </div>
             <div className='fe-select'>
-                <select value={selectedFile} onChange={handleFileSelect}>
+                <select value={selectedFile} onChange={handleFileSelect} disabled={isLoading}>
                     <option value="">Select a file</option>
                     {files.map(file => (
                         <option key={file} value={file}>
