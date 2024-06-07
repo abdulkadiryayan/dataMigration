@@ -1,4 +1,7 @@
 /node_modules
-backups/*
-scripts/migration/*
-scripts/rollback/*
+!/backups/
+!/scripts/migration/
+!/scripts/rollback/
+backups/**
+scripts/migration/**
+scripts/rollback/**
