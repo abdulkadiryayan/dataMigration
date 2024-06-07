@@ -81,15 +81,19 @@ const fileExists = (filePath) => {
 // Endpoint to get the current version from PostgreSQL
 app.get('/current_version', async (req, res) => {
     const { configName } = req.query;
-        try {
-            const result = await pools[configName].query('SELECT version_number FROM version ORDER BY id DESC LIMIT 1');
-            res.json(result.rows[0].version_number);            
-        } catch (err) {
+    try {
+        const result = await pools[configName].query('SELECT version_number FROM version ORDER BY id DESC LIMIT 1');
+        res.json(result.rows[0].version_number);
+    } catch (err) {
+        if (err.code === '42P01') {
+            res.status(404).json({ message: 'Version table does not exist' });
+        } else {
             console.error('Error fetching current version:', err);
             res.status(500).send('Error fetching current version');
         }
-
+    }
 });
+
 
 // Endpoint to get PostgreSQL configurations from SQLite
 app.get('/configurations', async (req, res) => {
@@ -318,11 +322,11 @@ app.post('/dump', (req, res) => {
     };
 
     const exportCon = `postgresql://${exportFrom.user}:${exportFrom.password}@${exportFrom.host}:${exportFrom.port}/${exportFrom.database}`;
-
+    const dbname = database.toString().toUpperCase() ;
     const now = new Date();
     const tarih = new Date(now.getTime() + (3 * 60 * 60 * 1000));
     const formattedDate = tarih.toISOString().replace(/:/g, '_').replace(/\..+/, ''); 
-    const uniqueFileName = `backup_${formattedDate}.sql`;
+    const uniqueFileName = `backup_${dbname}_${formattedDate}.sql`;
 
     const dumpFilePath = backupsDirectory + uniqueFileName;
 

@@ -67,6 +67,16 @@ button[type="button"] {
 button[type="button"]:hover {
     background-color: #c82333;
 }
+.version input{
+    width: 150px;
+    display: inline;
+}
+.version-fe{
+    display: inline;
+    align-items: center;
+    margin-top: 20px;
+    
+}
 
 .error {
     color: #dc3545;

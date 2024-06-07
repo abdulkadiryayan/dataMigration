@@ -169,16 +169,16 @@ const FileEditor = () => {
                     ))}
                 </select>
             </div>
-            <div className='new-file'>
-                <button onClick={handleCreateNewFile}>Create New File</button>
-            </div>
-            <div className='version'>
-                <label>Version:</label>
+            <div className='version-fe'>
+                <label style={{display:"inline"}}>Version:</label>
                 <input
                     type="text"
                     value={version}
                     onChange={(e) => setVersion(e.target.value)}
                 />
+            </div>
+            <div className='new-file'>
+                <button onClick={handleCreateNewFile}>Create New File</button>
             </div>
             {selectedFile && (
                 <div>

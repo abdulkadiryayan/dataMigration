@@ -41,8 +41,16 @@ const Migration = () => {
                 return axios.get(`http://localhost:3000/current_version?configName=${configKey}`);
             })
             .then(response => setCurrentVersion(response.data))
-            .catch(error => console.error('Error fetching configuration details:', error));
+            .catch(error => {
+                if (error.response && error.response.status === 404) {
+                    alert('Version table does not exist in the selected database.');
+                    setCurrentVersion("-");
+                } else {
+                    console.error('Error fetching configuration details:', error);
+                }
+            });
     };
+    
 
     const handleMigrate = async () => {
         setErrorMessage('');
@@ -54,6 +62,16 @@ const Migration = () => {
             alert('Please select a target version');
             return;
         }
+        if(currentVersion>=toVersion){
+            alert('Migrationda gerideki versiyona veya aynı versiyona geçilemez!')
+            return;
+        }
+        if(currentVersion===toVersion){
+            /*alert('NAPTIN SEN!!!')
+            alert('AYNI VERSİYONA GEÇMEYE Mİ ÇALIŞTIN!')
+            alert('NEYSEKİ HERHANGİ BİR ŞEY OLMADI :)')
+            return;*/
+        }
         setShowReview(true);
     };
 
@@ -64,6 +82,7 @@ const Migration = () => {
                 to: toVersion
             });
 
+
             if (response.data.success) {
                 try {
                     const migrateResponse = await axios.post('http://localhost:3000/migrate', {
@@ -73,7 +92,7 @@ const Migration = () => {
                         configName: selectedConfig
                     });
                     setExecutedScripts(migrateResponse.data.executedScripts);
-                    //alert(`Successfully migrated from v${currentVersion} to v${toVersion}`);
+                    alert(`Successfully migrated from v${currentVersion} to v${toVersion}`);
                     setCurrentVersion(toVersion);
                 } catch (error) {
                     console.error(error);
