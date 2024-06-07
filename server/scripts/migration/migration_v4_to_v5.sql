@@ -1,3 +1,0 @@
-ALTER TABLE customer 
-ADD COLUMN test2 VARCHAR(10);
-
