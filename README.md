@@ -1,10 +1,16 @@
 # dataMigration
 
-Migration script:
-Dvd rental veri tabanın da customer tablosu içerisinde one to one ilişkisi üzerinden çalışan email kolonunu yeni bir email tablosu oluşturup customer tablosundaki tüm verileri email tablosuna taşıyarak one to many ilişkili sisteme geçildi.
-Taşıdığımız verileri customer_email tablosu oluşturup customer ile ilişki kuruldu.
-Customer tablosunda email kolonunu sildiğimizde ise artık v2'ye geçmiş olundu.
+### Database
 
-Rollback script:
-Customer tablosuna email kolonu eklenip email tablosundaki email'ler customer tablosundaki email kolonuna taşındı.
-Customer_email ve email tablosu silinip v1'e dönülür.
+Bu klasör için öncelikle "cd database" komutuyla dizine girip "npm install" yardımıyla gerekli modülleri kurmamız gerekiyor.
+
+### Frontend
+
+Bu klasör için öncelikle "cd frontend" komutuyla dizine girip "npm install" yardımıyla gerekli modülleri kurmamız gerekiyor. Daha sonrasında "npm start" komutuyla React'ı ayağa kaldırabiliriz.[http://localhost:3006](http://localhost:3006) adresinde açılmış olacaktır.
+
+### Server
+
+Bu klasör için öncelikle "cd server" komutuyla dizine girip "npm install" yardımıyla gerekli modülleri kurmamız gerekiyor. Daha sonrasında "node index.js" komutuyla serverı ayağa kaldırabiliriz.[http://localhost:3006](http://localhost:3006) adresinde react ile
+servera bağlanmış olacaktır.
+
+
