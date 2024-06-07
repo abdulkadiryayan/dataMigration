@@ -1,4 +1,21 @@
+# node_modules klasörünü tamamen hariç tut
 /node_modules
+
+# node_modules klasörünü tamamen hariç tut
+/node_modules
+
+# backups klasörünü dahil et ama içindeki dosyaları hariç tut
+!/backups/
 backups/*
+!backups/.gitkeep
+
+# scripts/migration klasörünü dahil et ama içindeki dosyaları hariç tut
+!/scripts/migration/
 scripts/migration/*
+!scripts/migration/.gitkeep
+
+# scripts/rollback klasörünü dahil et ama içindeki dosyaları hariç tut
+!/scripts/rollback/
 scripts/rollback/*
+!scripts/rollback/.gitkeep
+
