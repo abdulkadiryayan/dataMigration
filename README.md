@@ -1,10 +1,44 @@
-# dataMigration
+# DataMigration
 
-Migration script:
-Dvd rental veri tabanın da customer tablosu içerisinde one to one ilişkisi üzerinden çalışan email kolonunu yeni bir email tablosu oluşturup customer tablosundaki tüm verileri email tablosuna taşıyarak one to many ilişkili sisteme geçildi.
-Taşıdığımız verileri customer_email tablosu oluşturup customer ile ilişki kuruldu.
-Customer tablosunda email kolonunu sildiğimizde ise artık v2'ye geçmiş olundu.
+Bu proje, veritabanı taşıma süreçlerini kolaylaştırmak için geliştirilmiş kapsamlı bir araçtır. Aşağıdaki işlemler için işlevsel özellikler sunar:
 
-Rollback script:
-Customer tablosuna email kolonu eklenip email tablosundaki email'ler customer tablosundaki email kolonuna taşındı.
-Customer_email ve email tablosu silinip v1'e dönülür.
+- **Backup List**: Yedeklerimizi görüntüleme imkanı.
+- **Veri Tabanı Yedeği Alma (Dump)**: Mevcut veritabanının yedeğini alarak veri kaybı riskini en aza indirme.
+- **Yedekten Geri Yükleme (Restore)**: Alınan yedeklerden veritabanını geri yükleme.
+- **Veri tabanı version Geçişi (Migration) **: Veritabanı version geçişi yapmaya yarar.
+- **Veri tabanında yapılan değişikliği geri alma (Rollback) **: Veri tabanı version'lar arası geri dönmeye yarar.
+- **Migrate ve Rollback Script Oluşturma (File Editor)**: Veritabanı yapısını güncellemeye yönelik migrate scriptleri oluşturma ve yapılan değişiklikleri geri almak için rollback scriptleri oluşturma.
+- **Config Oluşturma (Config Manager) **: Veri tabanı bağlantı bilgilerini kaydettiğimiz config dosyasıdır.
+
+## Backend, Node.js kullanılarak geliştirilmiştir ve veritabanı işlemleri için SQLite kullanır. Frontend, kullanıcı dostu bir arayüz sağlamak amacıyla React.js ile geliştirilmiştir.
+
+
+## Gerekli Kurulumlar ve Uygulamayı Başlatma
+
+1. **Gerekli Kurulumlar**:
+
+   Projeyi çalıştırmadan önce, projenin içerdiği alt dizinlerde gerekli bağımlılıkları kurmanız gerekmektedir.
+
+   - **Veritabanı (Database)**
+     - Dizine Gitme: `cd database`
+     - Gerekli Modülleri Kurma: `npm install`
+
+   - **Ön Yüz (Frontend)**
+     - Dizine Gitme: `cd frontend`
+     - Gerekli Modülleri Kurma: `npm install`
+
+   - **Sunucu (Server)**
+     - Dizine Gitme: `cd server`
+     - Gerekli Modülleri Kurma: `npm install`
+
+2. **Uygulamayı Başlatma**:
+
+   - **Sunucuyu Başlatma**:
+     - Sunucu Dizine Gitme: `cd server`
+     - Sunucuyu Başlatma: `node index.js`
+       - Sunucu `http://localhost:3000` adresinde çalışacaktır.
+
+   - **Ön Yüz Uygulamasını Başlatma**:
+     - Ön Yüz Dizine Gitme: `cd frontend`
+     - Uygulamayı Başlatma: `npm start`
+       - Uygulama otomatik olarak tarayıcınızda `http://localhost:3006` adresinde açılacaktır.
