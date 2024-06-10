@@ -12,6 +12,14 @@ Bu proje, veritabanı taşıma süreçlerini kolaylaştırmak için geliştirilm
 
 ## Backend, Node.js kullanılarak geliştirilmiştir ve veritabanı işlemleri için SQLite kullanır. Frontend, kullanıcı dostu bir arayüz sağlamak amacıyla React.js ile geliştirilmiştir.
 
+Bu tool'un çalışabilmesi için aşağıdaki yazılımların sisteminizde kurulu olması gerekmektedir:
+
+- **Node.js** (v22 veya üzeri)
+- **React.js** (v18 veya üzeri)
+- **npm** (Node Package Manager)
+- **SQLite** (Veritabanı için)
+- **PostgreSQL** (v16 veya üzeri) - **Windows** sistemlerde bu tool'un çalışabilmesi için PostgreSQL'in kurulu olması gerekmektedir.
+
 
 ## Gerekli Kurulumlar ve Uygulamayı Başlatma
 
