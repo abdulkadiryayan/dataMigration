@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Review from './Review';
+import Loading from './Loading'; // Make sure to create a Loading component
 
 const Dump = () => {
     const [configurations, setConfigurations] = useState([]);
@@ -14,6 +15,7 @@ const Dump = () => {
     });
     const [errorMessage, setErrorMessage] = useState('');
     const [showReview, setShowReview] = useState(false);
+    const [loading, setLoading] = useState(false); // State variable for loading
 
     useEffect(() => {
         axios.get('http://localhost:3000/configurations')
@@ -56,70 +58,78 @@ const Dump = () => {
 
     const handleDump = () => {
         setShowReview(true);
-
     };
 
     const cancelDump = () => {
         setShowReview(false);
     };
 
-    const confirmDump = () => {
+    const confirmDump = async () => {
         if (!selectedConfig) {
             alert('Please select a configuration.');
             return;
         }
-        axios.post('http://localhost:3000/dump', { target_db_connection: targetDbConnection })
-            .then(response => alert(response.data))
-            .catch(error => {
-                console.error('Error during dump:', error);
-                if (error.response) {
-                    alert('Error during dump: ' + error.response.data);
-                } else {
-                    alert('Error during dump: ' + error.message);
-                }
-            });
+        setLoading(true); // Set loading to true before starting the dump
+        try {
+            const response = await axios.post('http://localhost:3000/dump', { target_db_connection: targetDbConnection });
+            alert(response.data);
+        } catch (error) {
+            console.error('Error during dump:', error);
+            if (error.response) {
+                alert('Error during dump: ' + error.response.data);
+            } else {
+                alert('Error during dump: ' + error.message);
+            }
+        } finally {
+            setLoading(false); // Set loading to false after dump completes
+        }
         setShowReview(false); // Reset review state after confirming
     };
 
     return (
         <div>
-            {showReview ? (
-                <Review
-                details={{
-                    'Host': targetDbConnection.host,
-                    'User': targetDbConnection.user,
-                    'Password': targetDbConnection.password,
-                    'Database': targetDbConnection.database,
-                    'Port': targetDbConnection.port
-                }}
-                    onConfirm={confirmDump}
-                    onCancel={cancelDump}
-                    type="Dump"
-                />
-            ) : (
+            {loading && <Loading />} {/* Conditionally render Loading component */}
+            {!loading && (
                 <>
-                    <h2>Dump</h2>
-                    {errorMessage && <div className="error">{errorMessage}</div>}
-                    <div>
-                        <label>Configuration:</label>
-                        <select value={selectedConfig} onChange={handleConfigChange}>
-                            <option value="">Select Configuration</option>
-                            {configurations.map(config => (
-                                <option key={config.config_name} value={config.config_name}>
-                                    {config.config_name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    {selectedConfig && (
-                        <div className="config-card">
-                            <p><strong>Host:</strong> {targetDbConnection.host}</p>
-                            <p><strong>User:</strong> {targetDbConnection.user}</p>
-                            <p><strong>Password:</strong> {targetDbConnection.password}</p>
-                            <p><strong>Database:</strong> {targetDbConnection.database}</p>
-                            <p><strong>Port:</strong> {targetDbConnection.port}</p>
-                            <button onClick={handleDump}>Dump</button>
-                        </div>
+                    {showReview ? (
+                        <Review
+                            details={{
+                                'Host': targetDbConnection.host,
+                                'User': targetDbConnection.user,
+                                'Password': targetDbConnection.password,
+                                'Database': targetDbConnection.database,
+                                'Port': targetDbConnection.port
+                            }}
+                            onConfirm={confirmDump}
+                            onCancel={cancelDump}
+                            type="Dump"
+                        />
+                    ) : (
+                        <>
+                            <h2>Dump</h2>
+                            {errorMessage && <div className="error">{errorMessage}</div>}
+                            <div>
+                                <label>Configuration:</label>
+                                <select value={selectedConfig} onChange={handleConfigChange}>
+                                    <option value="">Select Configuration</option>
+                                    {configurations.map(config => (
+                                        <option key={config.config_name} value={config.config_name}>
+                                            {config.config_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            {selectedConfig && (
+                                <div className="config-card">
+                                    <p><strong>Host:</strong> {targetDbConnection.host}</p>
+                                    <p><strong>User:</strong> {targetDbConnection.user}</p>
+                                    <p><strong>Password:</strong> {targetDbConnection.password}</p>
+                                    <p><strong>Database:</strong> {targetDbConnection.database}</p>
+                                    <p><strong>Port:</strong> {targetDbConnection.port}</p>
+                                    <button onClick={handleDump}>Dump</button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </>
             )}
