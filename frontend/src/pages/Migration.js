@@ -32,21 +32,23 @@ const Migration = () => {
             .catch(error => console.error('Error fetching migration scripts:', error));
     }, []);
 
-    const handleConfigChange = (e) => {
+    const handleConfigChange = async (e) => {
         const configKey = e.target.value;
         setSelectedConfig(configKey);
         axios.get(`http://localhost:3000/config_details?configKey=${configKey}`)
-            .then(response => {
+            .then(async response => {
                 setTargetDbConnection(response.data);
-                return axios.get(`http://localhost:3000/current_version?configName=${configKey}`);
+                const currentVer = await axios.get(`http://localhost:3000/current_version?configName=${configKey}`);
+                return currentVer;
             })
-            .then(response => setCurrentVersion(response.data))
+            .then(async response => setCurrentVersion(response.data))
             .catch(error => {
                 if (error.response && error.response.status === 404) {
                     alert('Version table does not exist in the selected database.');
                     setCurrentVersion("-");
-                } else {
-                    console.error('Error fetching configuration details:', error);
+                } if(error.response.status === 500 )  {
+                    alert('Error fetching current version');
+                    setCurrentVersion("-")
                 }
             });
     };
@@ -65,12 +67,6 @@ const Migration = () => {
         if(currentVersion>=toVersion){
             alert('Migrationda gerideki versiyona veya aynı versiyona geçilemez!')
             return;
-        }
-        if(currentVersion===toVersion){
-            /*alert('NAPTIN SEN!!!')
-            alert('AYNI VERSİYONA GEÇMEYE Mİ ÇALIŞTIN!')
-            alert('NEYSEKİ HERHANGİ BİR ŞEY OLMADI :)')
-            return;*/
         }
         setShowReview(true);
     };

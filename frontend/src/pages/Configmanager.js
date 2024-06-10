@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './ConfigManager.css';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ConfigManager = () => {
     const [configurations, setConfigurations] = useState([]);
@@ -13,8 +15,8 @@ const ConfigManager = () => {
         database: '',
         port: ''
     });
-    const [originalConfigName, setOriginalConfigName] = useState(''); // Added state to store original config name
-    const [addVersionTable, setAddVersionTable] = useState(false); // Added state for checkbox
+    const [originalConfigName, setOriginalConfigName] = useState('');
+    const [addVersionTable, setAddVersionTable] = useState(false); 
     const [isEditing, setIsEditing] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -54,7 +56,7 @@ const ConfigManager = () => {
     };
 
     const handleCheckboxChange = (e) => {
-        setAddVersionTable(e.target.checked); // Checkbox change handler
+        setAddVersionTable(e.target.checked); 
     };
 
     const handleFormSubmit = async (e) => {
@@ -62,14 +64,20 @@ const ConfigManager = () => {
         try {
             if (isEditing) {
                 await axios.put('http://localhost:3000/update_configuration', { ...configDetails, original_config_name: originalConfigName });
+                toast.success('Config başarıyla düzenlendi.')
             } else {
                 await axios.post('http://localhost:3000/add_configuration', { ...configDetails, addVersionTable });
+                toast.success('Config başarıyla oluşturuldu.')
             }
             fetchConfigurations();
             resetForm();
         } catch (error) {
             console.error('Error saving configuration:', error);
-            setErrorMessage('Error saving configuration');
+            if (error.response && error.response.status === 400) {
+                toast.error('A configuration with the same name already exists');
+            } else {
+                toast.error('Error saving configuration');
+            }
         }
     };
 
@@ -79,9 +87,10 @@ const ConfigManager = () => {
                 await axios.delete('http://localhost:3000/delete_configuration', { data: { config_name: selectedConfig } });
                 fetchConfigurations();
                 resetForm();
+                toast.success('Config başarıyla silindi.')
             } catch (error) {
                 console.error('Error deleting configuration:', error);
-                setErrorMessage('Error deleting configuration');
+                toast.error('Error deleting configuration');
             }
         }
     };
@@ -96,7 +105,7 @@ const ConfigManager = () => {
             port: ''
         });
         setSelectedConfig('');
-        setAddVersionTable(false); // Reset checkbox
+        setAddVersionTable(false);
         setIsEditing(false);
         setErrorMessage('');
     };
@@ -104,6 +113,7 @@ const ConfigManager = () => {
     return (
         <div>
             <h2>Configuration Manager</h2>
+            <ToastContainer position="top-right" autoClose={5000} />
             <div style={{ display: "inline" }}>
                 <label style={{ display: "inline" }}>Configuration:</label>
                 <select onChange={handleConfigChange} value={selectedConfig}>

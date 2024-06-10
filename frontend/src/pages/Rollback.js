@@ -45,8 +45,9 @@ const Rollback = () => {
                 if (error.response && error.response.status === 404) {
                     alert('Version table does not exist in the selected database.');
                     setCurrentVersion("-");
-                } else {
-                    console.error('Error fetching configuration details:', error);
+                } if(error.response.status === 500 )  {
+                    alert('Version table does not exist in the selected database.');
+                    setCurrentVersion("-")
                 }
             });
     };
